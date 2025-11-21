@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, jsonify
-# Ensure analyze.py is updated to the "Lightweight API" version first!
-from analyze import analyze_text 
+# This imports your secure analyze.py (do not change that file)
+from analyze import analyze_text
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,78 +9,54 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return "SmartMail Insight Bot (Cliq Edition) is Running!"
+    return "SmartMail Insight Bot (SalesIQ Edition) is Healthy!"
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
     """
-    Entry point for Zoho Cliq Slash Command.
-    Usage in Cliq: /smartmail [paste_email_text_here]
+    This function handles messages from Zoho SalesIQ.
     """
-    
-    # 1. EXTRACT TEXT
-    # Zoho Cliq sends Slash Command data as Form Data in the 'arguments' field.
-    user_text = request.form.get("arguments")
-
-    # Fallback: Check JSON (Useful for testing via Postman)
-    if not user_text and request.is_json:
-        data = request.get_json()
-        user_text = data.get("text") or data.get("message")
-
-    # Validation
-    if not user_text:
-        return jsonify({
-            "text": "⚠️ Error: No text provided. usage: /smartmail [paste email text]"
-        })
-
-    # 2. RUN ANALYSIS
-    # This calls your lightweight analyze.py
+    # 1. READ DATA FROM SALESIQ
+    user_text = ""
     try:
-        result = analyze_text(user_text)
-    except Exception as e:
-        return jsonify({"text": f"❌ Analysis Failed: {str(e)}"})
+        data = request.get_json(force=True)
+        # SalesIQ sends message inside ['visitor']['message'] usually
+        if "visitor" in data and "message" in data["visitor"]:
+            user_text = data["visitor"]["message"]
+        elif "text" in data:
+            user_text = data["text"]
+    except:
+        pass
 
-    # 3. FORMAT FOR ZOHO CLIQ (JSON CARD)
-    # This specific JSON structure creates the visual card in Cliq
+    # If no text found, return nothing
+    if not user_text:
+        return jsonify({"replies": [{"text": "I couldn't read that message."}]})
+
+    # 2. GET AI ANALYSIS (Using your analyze.py)
+    result = analyze_text(user_text)
+
+    # 3. FORMAT FOR SALESIQ (Chat Bubbles)
+    # We create a nicely formatted message
+    bot_message = (
+        f"🔍 **SmartMail Analysis**\n"
+        f"------------------------------\n"
+        f"• **Tone:** {result['tone']}\n"
+        f"• **Urgency:** {result['urgency']}\n\n"
+        f"📝 **Summary:**\n{result['summary']}\n\n"
+        f"💡 **Suggested Reply:**\n{result['suggested_reply']}"
+    )
+
+    # The JSON structure SalesIQ expects:
     response = {
-        "text": "🤖 *SmartMail Insight Report*",
-        "card": {
-            "title": "Email Intelligence",
-            "theme": "modern-inline",
-            "thumbnail": "https://cdn-icons-png.flaticon.com/512/4712/4712035.png"
-        },
-        "slides": [
+        "replies": [
             {
-                "type": "label",
-                "title": "Key Metrics",
-                "data": [
-                    {"label": "Tone", "value": result.get("tone", "Neutral")},
-                    {"label": "Urgency", "value": result.get("urgency", "Low")}
-                ]
-            },
-            {
-                "type": "text",
-                "title": "📝 Summary",
-                "data": result.get("summary", "No summary generated.")
-            },
-            {
-                "type": "text",
-                "title": "💡 Suggested Reply",
-                "data": result.get("suggested_reply", "No reply generated.")
+                "text": bot_message
             }
         ],
-        "buttons": [
-            {
-                "label": "Create Ticket",
-                "action": {
-                    "type": "open_url",
-                    # Link to Zoho Desk ticket creation (or a dummy link for demo)
-                    "url": "https://desk.zoho.com/support/home" 
-                }
-            }
-        ]
+        # These buttons appear as clickable chips
+        "suggestions": ["Create Ticket", "Draft Reply", "Escalate"]
     }
-
+    
     return jsonify(response)
 
 if __name__ == "__main__":
