@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartMail Insight | Command Center</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
+    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap)" rel="stylesheet">
     <style>
         /* MODERN DARK THEME */
         body {
@@ -87,6 +87,7 @@
         <div class="status-badge"><div class="pulse"></div> Live Connection</div>
     </div>
 
+    <!-- TOP STATS ROW -->
     <div class="grid">
         <div class="card">
             <h2>Emails Processed</h2>
@@ -110,6 +111,7 @@
         </div>
     </div>
 
+    <!-- CHARTS & FEED -->
     <div class="grid main-row">
         <div class="card">
             <h2>Sentiment Distribution</h2>
@@ -128,7 +130,8 @@
                     </tr>
                 </thead>
                 <tbody id="feedBody">
-                    </tbody>
+                    <!-- JavaScript will inject rows here -->
+                </tbody>
             </table>
         </div>
     </div>
@@ -163,7 +166,7 @@
                 let res = await fetch('/api/stats');
                 let data = await res.json();
                 
-                // Update Counters with Animation Effect (Simple implementation)
+                // Update Counters
                 document.getElementById('totalCount').innerText = data.total;
                 document.getElementById('urgentCount').innerText = data.high_urgency;
                 document.getElementById('angryCount').innerText = data.angry;
