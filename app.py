@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app) # Allow dashboard to fetch data
+CORS(app)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,118 +16,16 @@ logging.basicConfig(level=logging.INFO)
 # Stores: {'tone': 'Angry', 'urgency': 'High', 'summary': '...', 'timestamp': ...}
 GLOBAL_STATS = []
 
-# --- DASHBOARD HTML TEMPLATE (Embed here for simplicity) ---
-DASHBOARD_HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SmartMail Command Center</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: white; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: #16213e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        h2 { margin-top: 0; font-size: 18px; color: #a8a8ff; }
-        .stat-big { font-size: 40px; font-weight: bold; }
-        .red { color: #ff4d4d; } .green { color: #4dff88; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #333; }
-        th { color: #888; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>🚀 SmartMail Insight Engine</h1>
-        <div>Live Status: <span class="green">● Online</span></div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>Total Emails Analyzed</h2>
-            <div class="stat-big" id="totalCount">0</div>
-        </div>
-        <div class="card">
-            <h2>Critical Urgency</h2>
-            <div class="stat-big red" id="urgentCount">0</div>
-        </div>
-    </div>
-    <br>
-    <div class="grid">
-        <div class="card">
-            <h2>Real-time Sentiment Analysis</h2>
-            <canvas id="toneChart"></canvas>
-        </div>
-        <div class="card">
-            <h2>Incoming Feed</h2>
-            <table id="feedTable">
-                <thead><tr><th>Tone</th><th>Urgency</th><th>Summary</th></tr></thead>
-                <tbody id="feedBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <script>
-        const ctx = document.getElementById('toneChart').getContext('2d');
-        const toneChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Angry', 'Neutral', 'Positive'],
-                datasets: [{
-                    data: [0, 0, 0],
-                    backgroundColor: ['#ff4d4d', '#888888', '#4dff88'],
-                    borderWidth: 0
-                }]
-            },
-            options: { cutout: '70%' }
-        });
-
-        async function fetchData() {
-            try {
-                let res = await fetch('/api/stats');
-                let data = await res.json();
-                
-                // Update Numbers
-                document.getElementById('totalCount').innerText = data.total;
-                document.getElementById('urgentCount').innerText = data.high_urgency;
-
-                // Update Chart
-                toneChart.data.datasets[0].data = [data.angry, data.neutral, data.positive];
-                toneChart.update();
-
-                // Update Table
-                let rows = "";
-                data.recent.forEach(item => {
-                    let color = item.tone.includes("Angry") ? "red" : "white";
-                    rows += `<tr>
-                        <td style="color:${color}">${item.tone}</td>
-                        <td>${item.urgency}</td>
-                        <td>${item.summary.substring(0, 40)}...</td>
-                    </tr>`;
-                });
-                document.getElementById('feedBody').innerHTML = rows;
-
-            } catch(e) { console.log(e); }
-        }
-
-        // Poll every 2 seconds for "Live" effect
-        setInterval(fetchData, 2000);
-        fetchData();
-    </script>
-</body>
-</html>
-"""
-
 @app.route("/")
 def index():
     return "SmartMail Bot is Running."
 
-# --- NEW ROUTE: MANAGER DASHBOARD ---
 @app.route("/dashboard")
 def dashboard():
-    return render_template_string(DASHBOARD_HTML)
+    # Flask automatically looks for this file inside the 'templates' folder
+    return render_template('index.html') 
 
-# --- NEW ROUTE: API FOR DASHBOARD ---
+# ... [Rest of the code remains exactly the same] ...
 @app.route("/api/stats")
 def stats():
     # Calculate stats from memory
