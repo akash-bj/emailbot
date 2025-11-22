@@ -1,7 +1,7 @@
 import os
 import logging
 import traceback
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from analyze import analyze_text
 from dotenv import load_dotenv
@@ -12,8 +12,7 @@ CORS(app)
 
 logging.basicConfig(level=logging.INFO)
 
-# --- IN-MEMORY DATABASE (Resets when server restarts, perfect for Demo) ---
-# Stores: {'tone': 'Angry', 'urgency': 'High', 'summary': '...', 'timestamp': ...}
+# --- IN-MEMORY DATABASE ---
 GLOBAL_STATS = []
 
 @app.route("/")
@@ -22,13 +21,11 @@ def index():
 
 @app.route("/dashboard")
 def dashboard():
-    # Flask automatically looks for this file inside the 'templates' folder
+    # This looks for 'index.html' inside the 'templates' folder
     return render_template('index.html') 
 
-# ... [Rest of the code remains exactly the same] ...
 @app.route("/api/stats")
 def stats():
-    # Calculate stats from memory
     total = len(GLOBAL_STATS)
     urgent = sum(1 for x in GLOBAL_STATS if x['urgency'] == 'High')
     angry = sum(1 for x in GLOBAL_STATS if "Angry" in x['tone'] or "Negative" in x['tone'])
@@ -41,7 +38,7 @@ def stats():
         "angry": angry,
         "positive": positive,
         "neutral": neutral,
-        "recent": GLOBAL_STATS[-5:][::-1] # Last 5 items
+        "recent": GLOBAL_STATS[-5:][::-1]
     })
 
 @app.route("/webhook", methods=["POST"])
@@ -65,7 +62,7 @@ def webhook():
         # --- ANALYZE ---
         result = analyze_text(user_text)
 
-        # --- SAVE TO GLOBAL STATS (The Magic) ---
+        # --- SAVE TO GLOBAL STATS ---
         GLOBAL_STATS.append({
             "tone": result['tone'],
             "urgency": result['urgency'],
@@ -96,3 +93,4 @@ def webhook():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+```json
